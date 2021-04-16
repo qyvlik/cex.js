@@ -1,0 +1,122 @@
+const SortedMap = require("collections/sorted-map");
+
+
+function equals(k1, k2) {
+    return k1.price === k2.price && k1.seq === k2.seq;
+}
+
+function compareAsc(k1, k2) {
+    if (k1.price < k2.price) {
+        return -1;
+    }
+    if (k1.price > k2.price) {
+        return 1;
+    }
+    if (k1.seq < k2.seq) {
+        return -1;
+    }
+    if (k1.seq > k2.seq) {
+        return 1;
+    }
+    return 0;
+}
+
+function compareDesc(k1, k2) {
+    if (k1.price < k2.price) {
+        return 1;
+    }
+    if (k1.price > k2.price) {
+        return -1;
+    }
+    if (k1.seq < k2.seq) {
+        return 1;
+    }
+    if (k1.seq > k2.seq) {
+        return -1;
+    }
+    return 0;
+}
+
+
+/**
+ *
+ * @type {module.MatchEngine}
+ */
+module.exports = class MatchEngine {
+
+    constructor() {
+        this.asks = new SortedMap(null, equals, compareAsc);
+        this.bids = new SortedMap(null, equals, compareDesc);
+        this.orders = new Map();
+        this.ZERO = BigInt(0);
+    }
+
+    placeOrder(order) {
+        const taker = Object.assign({}, order);
+        // uid, side, price, seq, amount, time
+        const {side, price, seq} = taker;
+        const orders = this.orders;
+        const takerBooks = side === 'BUY' ? this.bids : this.asks;
+        const makerBooks = side === 'SELL' ? this.bids : this.asks;
+
+        const trades = [];
+
+        if (makerBooks.length <= 0) {
+            takerBooks.set({price, seq}, taker);
+            orders.set(seq, taker);
+            return {trades};
+        }
+
+        let maker = makerBooks.min();
+        while ((side === 'BUY' && maker.price <= taker.price) || ( side === 'SELL' && maker.price >= taker.price)) {
+            const deal = maker.amount < taker.amount ? maker.amount : taker.amount;
+            maker.amount -= deal;
+            taker.amount -= deal;
+
+            trades.push({
+                taker: taker.seq,
+                maker: maker.seq,
+                price: maker.price,
+                deal: deal,
+                time: taker.time
+            });
+
+            if (maker.amount === this.ZERO) {
+                console.info(`remove maker`);
+                makerBooks.delete(maker);
+            }
+
+            if (taker.amount === this.ZERO) {
+                break;
+            }
+
+            if (makerBooks.length === 0) {
+                break;
+            }
+            maker = makerBooks.min();
+        }
+
+        if (taker.amount > this.ZERO) {
+            takerBooks.set({price, seq}, taker);
+            orders.set(seq, taker);
+        }
+
+        return {trades};
+    }
+
+    cancelOrder(seq) {
+        const orders = this.orders;
+        if (orders.has(seq)) {
+            const {price, seq, side} = this.orders.get(seq);
+            const books = side === 'BUY' ? this.bids : this.asks;
+            books.delete({price, seq});
+            orders.delete(seq);
+            return true;
+        }
+        return false;
+    }
+
+    getOrder(seq) {
+        return this.orders.get(seq);
+    }
+};
