@@ -55,8 +55,8 @@ module.exports = class RpcClient {
         const thiz = this;
         return new Promise((resolve, reject) => {
             thiz.callbacks[id] = (resObj) => {
-                if (resObj.error) {
-                    reject(resObj.error)
+                if (typeof resObj.error !== 'undefined') {
+                    reject(resObj.error);
                 } else {
                     resolve(resObj.result);
                 }

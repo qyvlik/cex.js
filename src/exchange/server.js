@@ -5,8 +5,7 @@ const MatchEngine = require("./match-engine");
 const ZERO = BigInt(0);
 
 module.exports = class Server {
-    constructor(port) {
-        this.server = new JsonRpcServer(port);
+    constructor() {
         this.engines = new Map();
         this.accounts = new Map();
         this.currencys = new Set();
@@ -14,15 +13,6 @@ module.exports = class Server {
         this.decimals = 18;
         this.seq = ZERO;
         const that = this;
-        const methods = ['ping', 'createCurrency',
-            'createMarket', 'recharge', 'withdraw',
-            'placeOrder', 'cancelOrder', 'getOrder', 'getAccount'];
-
-        for (const method of methods) {
-            this.server.addMethod(method, function () {
-                return that[method](...arguments);
-            });
-        }
     }
 
     ping() {
@@ -100,13 +90,16 @@ module.exports = class Server {
 
         // sub balance
         const [base, quote] = symbol.split('/');
-        const subCurrency = side === 'BUY' ? quote : base;
+        const sideIsBuy = side === 'BUY';
+        const money = sideIsBuy ? price * amount : ZERO;
+        const subCurrency = sideIsBuy ? quote : base;
         const account = this.getAccount({uid, currency: subCurrency});
-        if (account.available <= amount) {
-            throw new Error(`Insufficient funds, available of ${subCurrency} less than ${amount}`);
+        const frozen = sideIsBuy ? money : amount;
+        if (account.available < frozen) {
+            throw new Error(`Insufficient funds, available of ${subCurrency} less than ${frozen}`);
         }
-        account.available -= amount;
-        account.frozen += amount;
+        account.available -= frozen;
+        account.frozen += frozen;
 
         const order = {
             uid,
@@ -119,29 +112,32 @@ module.exports = class Server {
         const result = engine.placeOrder(order);
 
         for (const trade of result.trades) {
-            const {taker, maker} = trade;
-            this.inAndOutBound(taker, true);
-            this.inAndOutBound(maker, false);
+            const {taker, maker, time} = trade;
+            this.inAndOutBound(taker, time, true);
+            this.inAndOutBound(maker, time, false);
         }
 
         return result;
     }
 
-    inAndOutBound({uid, outbound, inbound, refund}, taker) {
+    inAndOutBound({uid, outbound, inbound, refund}, time, isTaker) {
         {
             const {currency, amount, type} = outbound;
             const account = this.getAccount({uid, currency});
             account[type] -= amount;
+            account.utime = time;
         }
         {
             const {currency, amount, type} = inbound;
             const account = this.getAccount({uid, currency});
             account[type] += amount;
+            account.utime = time;
         }
-        if (taker && refund.amount > ZERO) {
+        if (isTaker && refund.amount > ZERO) {
             const account = this.getAccount({uid, currency: refund.currency});
             account.available += refund.amount;
             account.frozen -= refund.amount;
+            account.utime = time;
         }
     }
 
@@ -161,6 +157,15 @@ module.exports = class Server {
             this.accounts.set(key, account);
         }
         return account;
+    }
+
+    getAccounts({uid}) {
+        const accounts = [];
+        for (const currency of this.currencys) {
+            const account = this.getAccount({uid, currency});
+            accounts.add(account);
+        }
+        return accounts;
     }
 
     cancelOrder({symbol, seq}) {

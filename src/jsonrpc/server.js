@@ -62,9 +62,7 @@ module.exports = class Server {
             }
             return {id, jsonrpc, result};
         } catch (error) {
-            console.error(`jsonrpc server call ${method} error:${error}`);
             console.trace(error);
-
             return {jsonrpc, id, error: {code: -32603, message: error.message, data: error}};
         }
     }
@@ -74,5 +72,4 @@ module.exports = class Server {
             session.send(JSON.stringify({jsonrpc, method, params}));
         }
     }
-}
-;
+};

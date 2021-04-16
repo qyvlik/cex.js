@@ -4,39 +4,76 @@ const Client = require('../../src/jsonrpc/client');
     const client = new Client();
     await client.open('ws://localhost:8080');
 
-
     console.info(`ping=${await client.call('ping', [Date.now()])}`);
 
 
     await client.call('createCurrency', ['BTC']);
     await client.call('createCurrency', ['USDT']);
-    await client.call('createMarket', ['BTC/USDT']);
+    try {
+        await client.call('createMarket', ['BTC/USDT']);
+    } catch (error) {
+        console.error(`createMarket failure : ${error.message}`);
+    }
+
+    await client.call('recharge', {
+        uid: 10000,
+        currency: 'BTC',
+        amount: '1',
+        time: Date.now()
+    });
+
 
     await client.call('recharge', {
         uid: 10000,
         currency: 'USDT',
-        amount: '1000000',
+        amount: '100000',
         time: Date.now()
     });
 
-    const cmd = {
+    {
+        const accounts = await client.call('getAccounts', {uid: 10000});
+        console.info(`getAccount=${JSON.stringify(accounts)}`);
+    }
+
+    const buyCmd = {
         uid: 10000,
         side: 'BUY',
-        price: '10000',
-        amount: '10000',
+        price: '62000',
+        amount: '1',
+        symbol: 'BTC/USDT'
+    };
+    try {
+        const placeResult = await client.call('placeOrder', buyCmd);
+        console.info(`placeResult=${JSON.stringify(placeResult)}`);
+
+        const order = await client.call('getOrder', {symbol: 'BTC/USDT', seq: placeResult.seq});
+        console.info(`getOrder=${JSON.stringify(order)}`);
+
+    } catch (error) {
+        console.error(`placeOrder failure : ${JSON.stringify(error)}`);
+    }
+
+    const sellCmd = {
+        uid: 10000,
+        side: 'SELL',
+        price: '62000',
+        amount: '1',
         symbol: 'BTC/USDT'
     };
 
-    const placeResult = await client.call('placeOrder', cmd);
-    console.info(`placeResult=${JSON.stringify(placeResult)}`);
+    try {
+        const placeResult = await client.call('placeOrder', sellCmd);
+        console.info(`placeResult=${JSON.stringify(placeResult)}`);
 
+    } catch (error) {
+        console.error(`placeOrder failure : ${JSON.stringify(error)}`);
+    }
 
-    const order = await client.call('getOrder', {symbol: 'BTC/USDT', seq: placeResult.seq});
-    console.info(`getOrder=${JSON.stringify(order)}`);
+    {
+        const accounts = await client.call('getAccounts', {uid: 10000});
+        console.info(`getAccount=${JSON.stringify(accounts)}`);
+    }
 
-
-    const account = await client.call('getAccount', {uid: 10000, currency: 'USDT'});
-    console.info(`getAccount=${JSON.stringify(account)}`);
 
 })();
 
