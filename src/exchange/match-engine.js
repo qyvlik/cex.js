@@ -29,10 +29,10 @@ function compareDesc(k1, k2) {
         return -1;
     }
     if (k1.seq < k2.seq) {
-        return 1;
+        return -1;
     }
     if (k1.seq > k2.seq) {
-        return -1;
+        return 1;
     }
     return 0;
 }
@@ -53,6 +53,7 @@ module.exports = class MatchEngine {
 
     placeOrder(order) {
         const taker = Object.assign({}, order);
+        taker.remain = taker.amount;
         // uid, side, price, seq, amount, time
         const {side, price, seq} = taker;
         const orders = this.orders;
@@ -69,9 +70,9 @@ module.exports = class MatchEngine {
 
         let maker = makerBooks.min();
         while ((side === 'BUY' && maker.price <= taker.price) || ( side === 'SELL' && maker.price >= taker.price)) {
-            const deal = maker.amount < taker.amount ? maker.amount : taker.amount;
-            maker.amount -= deal;
-            taker.amount -= deal;
+            const deal = maker.remain < taker.remain ? maker.remain : taker.remain;
+            maker.remain -= deal;
+            taker.remain -= deal;
 
             trades.push({
                 taker: taker.seq,
@@ -81,12 +82,12 @@ module.exports = class MatchEngine {
                 time: taker.time
             });
 
-            if (maker.amount === this.ZERO) {
+            if (maker.remain === this.ZERO) {
                 console.info(`remove maker`);
                 makerBooks.delete(maker);
             }
 
-            if (taker.amount === this.ZERO) {
+            if (taker.remain === this.ZERO) {
                 break;
             }
 
@@ -96,7 +97,7 @@ module.exports = class MatchEngine {
             maker = makerBooks.min();
         }
 
-        if (taker.amount > this.ZERO) {
+        if (taker.remain > this.ZERO) {
             takerBooks.set({price, seq}, taker);
             orders.set(seq, taker);
         }

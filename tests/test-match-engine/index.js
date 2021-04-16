@@ -24,7 +24,7 @@ const o2 = {
     side: 'BUY',
     price: BigInt('10000'),
     seq: seq++,
-    amount: BigInt(1),
+    amount: BigInt(2),
     time: Date.now()
 };
 
