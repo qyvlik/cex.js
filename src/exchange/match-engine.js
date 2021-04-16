@@ -65,7 +65,7 @@ module.exports = class MatchEngine {
         if (makerBooks.length <= 0) {
             takerBooks.set({price, seq}, taker);
             orders.set(seq, taker);
-            return {trades};
+            return {seq: taker.seq, trades};
         }
 
         let maker = makerBooks.min();
@@ -101,7 +101,7 @@ module.exports = class MatchEngine {
             orders.set(seq, taker);
         }
 
-        return {trades};
+        return {seq: taker.seq, trades};
     }
 
     cancelOrder(seq) {
