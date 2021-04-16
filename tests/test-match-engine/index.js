@@ -54,6 +54,9 @@ const trades = val.trades;
 for(const trade of trades) {
     console.info(`trade = ${JSON.stringify(trade)}`);
 }
+const o2FromEngine = me.getOrder(o2.seq);
+console.info(`o2FromEngine:${JSON.stringify(o2FromEngine)}`);
+
 me.cancelOrder(o2.seq);
 
 me.asks.forEach(function (order, key) {

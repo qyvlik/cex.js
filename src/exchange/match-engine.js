@@ -83,7 +83,6 @@ module.exports = class MatchEngine {
             });
 
             if (maker.remain === this.ZERO) {
-                console.info(`remove maker`);
                 makerBooks.delete(maker);
             }
 
