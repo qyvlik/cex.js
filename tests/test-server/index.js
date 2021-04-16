@@ -2,7 +2,7 @@ BigInt.prototype.toJSON = function () {
     return this.toString()
 };
 
-const Server = require('../../src/exchange/server');
+const Server = require('../../src/exchange/exchange-server');
 const JsonRpcServer = require("../../src/jsonrpc/server");
 
 (async () => {

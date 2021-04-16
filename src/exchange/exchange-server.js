@@ -4,7 +4,7 @@ const MatchEngine = require("./match-engine");
 
 const ZERO = BigInt(0);
 
-module.exports = class Server {
+module.exports = class ExchangeServer {
     constructor() {
         this.engines = new Map();
         this.accounts = new Map();
@@ -33,7 +33,7 @@ module.exports = class Server {
             throw new Error(`quote currency ${quote} not exist`);
         }
         if (this.symbols.has(symbol)) {
-            throw new Error(`symbol ${symbol} already exist`);
+            return symbol;
         }
         this.symbols.add(symbol);
         this.engines.set(symbol, new MatchEngine(symbol));
