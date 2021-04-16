@@ -13,7 +13,7 @@ const JsonRpcServer = require("../../src/jsonrpc/server");
     const methods = ['ping',
         'createCurrency', 'createMarket',
         'placeOrder', 'cancelOrder', 'getOrder',
-        'getDepth',
+        'getDepth', 'getTicker',
         'recharge', 'withdraw', 'getAccount', 'getAccounts'];
 
     for (const method of methods) {

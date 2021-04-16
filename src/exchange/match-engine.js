@@ -38,6 +38,8 @@ function compareDesc(k1, k2) {
 }
 
 
+const ZERO = BigInt(0);
+
 /**
  *
  * @type {module.MatchEngine}
@@ -51,8 +53,8 @@ module.exports = class MatchEngine {
         this.quote = quote;
         this.asks = new SortedMap(null, equals, compareAsc);
         this.bids = new SortedMap(null, equals, compareDesc);
+        this.last = ZERO;
         this.orders = new Map();
-        this.ZERO = BigInt(0);
     }
 
     placeOrder(order) {
@@ -82,7 +84,7 @@ module.exports = class MatchEngine {
             taker.remain -= deal;
 
             const refundMoney = (takerSideIsBuy && taker.price > maker.price)
-                ? (taker.price - maker.price) * deal : this.ZERO;
+                ? (taker.price - maker.price) * deal : ZERO;
 
             trades.push({
                 symbol: this.symbol,
@@ -125,11 +127,13 @@ module.exports = class MatchEngine {
                 },
             });
 
-            if (maker.remain === this.ZERO) {
+            this.last = price;
+
+            if (maker.remain === ZERO) {
                 makerBooks.delete(maker);
             }
 
-            if (taker.remain === this.ZERO) {
+            if (taker.remain === ZERO) {
                 break;
             }
 
@@ -139,7 +143,7 @@ module.exports = class MatchEngine {
             maker = makerBooks.min();
         }
 
-        if (taker.remain > this.ZERO) {
+        if (taker.remain > ZERO) {
             takerBooks.set({price, seq}, taker);
             orders.set(seq, taker);
         }
@@ -177,7 +181,7 @@ module.exports = class MatchEngine {
 
         function fill(items, val, key) {
             const {price} = key;
-            let amount = items.get(price);
+            const amount = items.get(price);
             items.set(price, typeof amount === 'undefined' ? val.remain : amount + val.remain);
             if (!limitIsUndefined && items.size >= limit) throw new Error(`stop fill items`);
         }
@@ -197,6 +201,10 @@ module.exports = class MatchEngine {
         }
 
         return {asks: Array.from(askMap.entries()), bids: Array.from(bidMap.entries())};
+    }
+
+    getTicker() {
+        return this.last;
     }
 
 };

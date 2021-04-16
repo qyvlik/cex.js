@@ -212,7 +212,19 @@ module.exports = class ExchangeServer {
         if (typeof engine === 'undefined') {
             throw new Error(`symbol ${symbol} not exist`);
         }
-        return engine.getDepth(limit);
+        const result = engine.getDepth(limit);
+        result.time = Date.now();
+        return result;
+    }
+
+    getTicker({symbol}) {
+        const engine = this.engines.get(symbol);
+        if (typeof engine === 'undefined') {
+            throw new Error(`symbol ${symbol} not exist`);
+        }
+        const depth = engine.getDepth(1);
+        const last = engine.getTicker();
+        return {last, ask: depth.asks[0], bid: depth.bids[0], time: Date.now()};
     }
 };
 

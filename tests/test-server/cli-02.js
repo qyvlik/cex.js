@@ -52,6 +52,9 @@ const Client = require('../../src/jsonrpc/client');
     try {
         const depth = await client.call('getDepth', {symbol: 'BTC/USDT'});
         console.info(`getDepth=${JSON.stringify(depth)}`);
+
+        const ticker = await client.call('getTicker', {symbol: 'BTC/USDT'});
+        console.info(`getTicker=${JSON.stringify(ticker)}`);
     } catch (error) {
         console.error(`getDepth failure : ${JSON.stringify(error)}`);
     }
