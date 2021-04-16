@@ -12,6 +12,14 @@ const Client = require('../../src/jsonrpc/client');
     await client.call('createCurrency', ['USDT']);
     await client.call('createMarket', ['BTC/USDT']);
 
+    await client.call('recharge', {
+        uid: 10000,
+        currency: 'USDT',
+        amount: '1000000',
+        time: Date.now()
+    });
+
+
     const cmd = {
         uid: 10000,
         side: 'BUY',
@@ -26,6 +34,10 @@ const Client = require('../../src/jsonrpc/client');
 
     const order = await client.call('getOrder', {symbol: 'BTC/USDT', seq: placeResult.seq});
     console.info(`getOrder=${JSON.stringify(order)}`);
+
+
+    const account = await client.call('getAccount', {uid: 10000, currency: 'USDT'});
+    console.info(`getAccount=${JSON.stringify(account)}`);
 
 })();
 

@@ -44,7 +44,11 @@ function compareDesc(k1, k2) {
  */
 module.exports = class MatchEngine {
 
-    constructor() {
+    constructor(symbol) {
+        const [base, quote] = symbol.split('/');
+        this.symbol = symbol;
+        this.base = base;
+        this.quote = quote;
         this.asks = new SortedMap(null, equals, compareAsc);
         this.bids = new SortedMap(null, equals, compareDesc);
         this.orders = new Map();
@@ -71,15 +75,53 @@ module.exports = class MatchEngine {
         let maker = makerBooks.min();
         while ((side === 'BUY' && maker.price <= taker.price) || ( side === 'SELL' && maker.price >= taker.price)) {
             const deal = maker.remain < taker.remain ? maker.remain : taker.remain;
+            const price = maker.price;
+            const money = price * deal;
             maker.remain -= deal;
             taker.remain -= deal;
 
+            const refundMoney = (taker.side === 'BUY' && taker.price > maker.price)
+                ? (taker.price - maker.price) * deal : this.ZERO;
+
             trades.push({
-                taker: taker.seq,
-                maker: maker.seq,
-                price: maker.price,
+                symbol: this.symbol,
+                price: price,
                 deal: deal,
-                time: taker.time
+                time: taker.time,
+                taker: {
+                    refund: {
+                        amount: refundMoney,
+                        currency: this.quote,
+                    },
+                    outbound: {
+                        amount: taker.side === 'BUY' ? money : deal,
+                        currency: taker.side === 'BUY' ? this.quote : this.base,
+                        type: 'frozen'
+                    },
+                    inbound: {
+                        amount: taker.side === 'BUY' ? deal : money,
+                        currency: taker.side === 'BUY' ? this.base : this.quote,
+                        type: 'available'
+                    },
+                    uid: taker.uid,
+                    seq: taker.seq,
+                    side: taker.side,
+                },
+                maker: {
+                    uid: maker.uid,
+                    seq: maker.seq,
+                    side: maker.side,
+                    outbound: {
+                        amount: maker.side === 'BUY' ? money : deal,
+                        currency: maker.side === 'BUY' ? this.quote : this.base,
+                        type: 'frozen'
+                    },
+                    inbound: {
+                        amount: maker.side === 'BUY' ? deal : money,
+                        currency: maker.side === 'BUY' ? this.base : this.quote,
+                        type: 'available'
+                    },
+                },
             });
 
             if (maker.remain === this.ZERO) {
@@ -100,7 +142,6 @@ module.exports = class MatchEngine {
             takerBooks.set({price, seq}, taker);
             orders.set(seq, taker);
         }
-
         return {seq: taker.seq, trades};
     }
 

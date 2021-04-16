@@ -4,7 +4,7 @@ BigInt.prototype.toJSON = function() {
     return this.toString()
 };
 
-const me = new MatchEngine();
+const me = new MatchEngine('BTC/USDT');
 let seq = BigInt(1);
 
 
