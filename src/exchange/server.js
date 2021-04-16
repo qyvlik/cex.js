@@ -3,6 +3,7 @@ const JsonRpcServer = require("../../src/jsonrpc/server");
 const MatchEngine = require("./match-engine");
 const AccountEngine = require('./account-engine');
 
+
 module.exports = class Server {
     constructor(port) {
         this.server = new JsonRpcServer(port);
@@ -11,13 +12,14 @@ module.exports = class Server {
         this.currencys = new Set();
         this.symbols = new Set();
         this.decimals = 18;
+        this.seq = BigInt(0);
         const that = this;
         const methods = ['ping', 'createCurrency',
             'createMarket', 'recharge', 'withdraw',
             'placeOrder', 'cancelOrder', 'getOrder'];
 
         for (const method of methods) {
-            this.server.addMethod(method, () => {
+            this.server.addMethod(method, function () {
                 return that[method](...arguments)
             });
         }
@@ -34,7 +36,9 @@ module.exports = class Server {
     }
 
     createMarket(symbol) {
-        const [base, quote] = symbo.split('/');
+
+
+        const [base, quote] = symbol.split('/');
         if (!this.currencys.has(base)) {
             throw new Error(`base currency ${base} not exist`);
         }
@@ -72,9 +76,14 @@ module.exports = class Server {
         if (typeof engine === 'undefined') {
             throw new Error(`symbol ${symbol} not exist`);
         }
-        const order = {uid, side, price, amount};
-        order.time = Date.now();
-        order.seq = this.seq++;
+        const order = {
+            uid,
+            side,
+            price: BigInt(price),
+            amount: BigInt(amount),
+            time: Date.now(),
+            seq: (this.seq += BigInt(1))
+        };
         return engine.placeOrder(order);
     }
 
@@ -83,15 +92,15 @@ module.exports = class Server {
         if (typeof engine === 'undefined') {
             throw new Error(`symbol ${symbol} not exist`);
         }
-        return engine.cancelOrder(seq);
+        return engine.cancelOrder(BigInt(seq));
     }
 
-    getOrder({seq}) {
+    getOrder({symbol, seq}) {
         const engine = this.engines.get(symbol);
         if (typeof engine === 'undefined') {
             throw new Error(`symbol ${symbol} not exist`);
         }
-        return engine.getOrder(seq);
+        return engine.getOrder(BigInt(seq));
     }
 };
 
