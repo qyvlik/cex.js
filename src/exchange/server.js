@@ -40,7 +40,7 @@ module.exports = class Server {
         return symbol;
     }
 
-    recharge({uid, currency, amount, time}) {
+    recharge({uid, currency, amount}) {
         if (!this.currencys.has(currency)) {
             throw new Error(`currency ${currency} not exist`);
         }
@@ -48,14 +48,14 @@ module.exports = class Server {
         if (amount <= ZERO) {
             throw new Error(`amount ${amount} less than zero`);
         }
-
-        const account = this.getAccount({uid, currency});
+        const time = Date.now();
+        const account = this.getAccount({uid, currency, time});
         account.available += amount;
         account.utime = time;
         return true;
     }
 
-    withdraw({uid, currency, amount, time}) {
+    withdraw({uid, currency, amount}) {
         if (!this.currencys.has(currency)) {
             throw new Error(`currency ${currency} not exist`);
         }
@@ -63,8 +63,9 @@ module.exports = class Server {
         if (amount <= ZERO) {
             throw new Error(`amount ${amount} less than zero`);
         }
+        const time = Date.now();
         const key = `${uid}/${currency}`;
-        const account = this.accounts.get(key);
+        const account = this.getAccount({uid, currency, time});
         if (typeof account === 'undefined') {
             throw new Error(`account ${key} not exist`);
         }
@@ -87,13 +88,13 @@ module.exports = class Server {
         if (amount <= ZERO) {
             throw new Error(`amount ${amount} less than zero`);
         }
-
+        const time = Date.now();
         // sub balance
         const [base, quote] = symbol.split('/');
         const sideIsBuy = side === 'BUY';
         const money = sideIsBuy ? price * amount : ZERO;
         const subCurrency = sideIsBuy ? quote : base;
-        const account = this.getAccount({uid, currency: subCurrency});
+        const account = this.getAccount({uid, currency: subCurrency, time});
         const frozen = sideIsBuy ? money : amount;
         if (account.available < frozen) {
             throw new Error(`Insufficient funds, available of ${subCurrency} less than ${frozen}`);
@@ -106,7 +107,7 @@ module.exports = class Server {
             side,
             price: price,
             amount: amount,
-            time: Date.now(),
+            time,
             seq: (this.seq += BigInt(1))
         };
         const result = engine.placeOrder(order);
@@ -123,29 +124,28 @@ module.exports = class Server {
     inAndOutBound({uid, outbound, inbound, refund}, time, isTaker) {
         {
             const {currency, amount, type} = outbound;
-            const account = this.getAccount({uid, currency});
+            const account = this.getAccount({uid, currency, time});
             account[type] -= amount;
             account.utime = time;
         }
         {
             const {currency, amount, type} = inbound;
-            const account = this.getAccount({uid, currency});
+            const account = this.getAccount({uid, currency, time});
             account[type] += amount;
             account.utime = time;
         }
         if (isTaker && refund.amount > ZERO) {
-            const account = this.getAccount({uid, currency: refund.currency});
+            const account = this.getAccount({uid, currency: refund.currency, time});
             account.available += refund.amount;
             account.frozen -= refund.amount;
             account.utime = time;
         }
     }
 
-    getAccount({uid, currency}) {
+    getAccount({uid, currency, time}) {
         const key = `${uid}/${currency}`;
         let account = this.accounts.get(key);
         if (typeof account === 'undefined') {
-            const time = Date.now();
             account = {
                 uid,
                 currency: currency,
@@ -160,9 +160,10 @@ module.exports = class Server {
     }
 
     getAccounts({uid}) {
+        const time = Date.now();
         const accounts = [];
         for (const currency of this.currencys) {
-            const account = this.getAccount({uid, currency});
+            const account = this.getAccount({uid, currency, time});
             accounts.add(account);
         }
         return accounts;

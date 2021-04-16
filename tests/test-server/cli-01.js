@@ -18,16 +18,14 @@ const Client = require('../../src/jsonrpc/client');
     await client.call('recharge', {
         uid: 10000,
         currency: 'BTC',
-        amount: '1',
-        time: Date.now()
+        amount: '1'
     });
 
 
     await client.call('recharge', {
         uid: 10000,
         currency: 'USDT',
-        amount: '100000',
-        time: Date.now()
+        amount: '100000'
     });
 
     {
