@@ -42,12 +42,10 @@ const o3 = {
 const val = me.placeOrder(o3);
 
 me.asks.forEach(function (order, key) {
-    console.log(`ask price=${key.price}, seq=${key.seq}, order=${JSON.stringify(order)}`);
+    console.log(`asks price=${key.price}, seq=${key.seq}, order=${JSON.stringify(order)}`);
 });
-
-
 me.bids.forEach(function (order, key) {
-    console.log(`ask price=${key.price}, seq=${key.seq}, order=${JSON.stringify(order)}`);
+    console.log(`bids price=${key.price}, seq=${key.seq}, order=${JSON.stringify(order)}`);
 });
 
 console.info(`val=${JSON.stringify(val)}`);
@@ -56,3 +54,11 @@ const trades = val.trades;
 for(const trade of trades) {
     console.info(`trade = ${JSON.stringify(trade)}`);
 }
+me.cancelOrder(o2.seq);
+
+me.asks.forEach(function (order, key) {
+    console.log(`asks price=${key.price}, seq=${key.seq}, order=${JSON.stringify(order)}`);
+});
+me.bids.forEach(function (order, key) {
+    console.log(`bids price=${key.price}, seq=${key.seq}, order=${JSON.stringify(order)}`);
+});

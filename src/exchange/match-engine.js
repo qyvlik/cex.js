@@ -54,7 +54,7 @@ module.exports = class MatchEngine {
     placeOrder(order) {
         const taker = Object.assign({}, order);
         taker.remain = taker.amount;
-        // uid, side, price, seq, amount, time
+        // uid, side, price, seq, amount, remain, time
         const {side, price, seq} = taker;
         const orders = this.orders;
         const takerBooks = side === 'BUY' ? this.bids : this.asks;
@@ -108,7 +108,7 @@ module.exports = class MatchEngine {
     cancelOrder(seq) {
         const orders = this.orders;
         if (orders.has(seq)) {
-            const {price, seq, side} = this.orders.get(seq);
+            const {price, side} = this.orders.get(seq);
             const books = side === 'BUY' ? this.bids : this.asks;
             books.delete({price, seq});
             orders.delete(seq);
