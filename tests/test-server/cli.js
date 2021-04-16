@@ -19,7 +19,6 @@ const Client = require('../../src/jsonrpc/client');
         time: Date.now()
     });
 
-
     const cmd = {
         uid: 10000,
         side: 'BUY',
