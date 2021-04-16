@@ -10,9 +10,11 @@ const JsonRpcServer = require("../../src/jsonrpc/server");
 
     const jsonRpcServer = new JsonRpcServer(8080);
 
-    const methods = ['ping', 'createCurrency',
-        'createMarket', 'recharge', 'withdraw',
-        'placeOrder', 'cancelOrder', 'getOrder', 'getAccount', 'getAccounts'];
+    const methods = ['ping',
+        'createCurrency', 'createMarket',
+        'placeOrder', 'cancelOrder', 'getOrder',
+        'getDepth',
+        'recharge', 'withdraw', 'getAccount', 'getAccounts'];
 
     for (const method of methods) {
         jsonRpcServer.addMethod(method, function () {

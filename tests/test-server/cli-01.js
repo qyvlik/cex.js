@@ -52,6 +52,14 @@ const Client = require('../../src/jsonrpc/client');
         console.error(`placeOrder failure : ${JSON.stringify(error)}`);
     }
 
+
+    try {
+        const depth = await client.call('getDepth', {symbol: 'BTC/USDT'});
+        console.info(`getDepth=${JSON.stringify(depth)}`);
+    } catch (error) {
+        console.error(`getDepth failure : ${JSON.stringify(error)}`);
+    }
+
     const sellCmd = {
         uid: 10000,
         side: 'SELL',
@@ -68,6 +76,13 @@ const Client = require('../../src/jsonrpc/client');
         console.error(`placeOrder failure : ${JSON.stringify(error)}`);
     }
 
+    try {
+        const depth = await client.call('getDepth', {symbol: 'BTC/USDT'});
+        console.info(`getDepth=${JSON.stringify(depth)}`);
+    } catch (error) {
+        console.error(`getDepth failure : ${JSON.stringify(error)}`);
+    }
+
     {
         const accounts = await client.call('getAccounts', {uid: 10000});
         console.info(`getAccount=${JSON.stringify(accounts)}`);
@@ -78,6 +93,13 @@ const Client = require('../../src/jsonrpc/client');
         console.info(`cancel = ${JSON.stringify(cancel)}`);
         const accounts = await client.call('getAccounts', {uid: 10000});
         console.info(`getAccount=${JSON.stringify(accounts)}`);
+    }
+
+    try {
+        const depth = await client.call('getDepth', {symbol: 'BTC/USDT'});
+        console.info(`getDepth=${JSON.stringify(depth)}`);
+    } catch (error) {
+        console.error(`getDepth failure : ${JSON.stringify(error)}`);
     }
 
 })();

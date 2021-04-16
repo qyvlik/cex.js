@@ -33,8 +33,6 @@ const Client = require('../../src/jsonrpc/client');
         console.info(`getAccount=${JSON.stringify(accounts)}`);
     }
 
-
-
     const sellCmd = {
         uid: 10000,
         side: 'SELL',
@@ -49,6 +47,13 @@ const Client = require('../../src/jsonrpc/client');
 
     } catch (error) {
         console.error(`placeOrder failure : ${JSON.stringify(error)}`);
+    }
+
+    try {
+        const depth = await client.call('getDepth', {symbol: 'BTC/USDT'});
+        console.info(`getDepth=${JSON.stringify(depth)}`);
+    } catch (error) {
+        console.error(`getDepth failure : ${JSON.stringify(error)}`);
     }
 
     const buyCmd = {

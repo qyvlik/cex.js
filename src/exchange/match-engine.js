@@ -169,4 +169,34 @@ module.exports = class MatchEngine {
     getOrder(seq) {
         return this.orders.get(seq);
     }
+
+    getDepth(limit) {
+        const limitIsUndefined = typeof limit === 'undefined';
+        const askMap = new Map();
+        const bidMap = new Map();
+
+        function fill(items, val, key) {
+            const {price} = key;
+            let amount = items.get(price);
+            items.set(price, typeof amount === 'undefined' ? val.remain : amount + val.remain);
+            if (!limitIsUndefined && items.size >= limit) throw new Error(`stop fill items`);
+        }
+
+        try {
+            this.asks.forEach((val, key) => {
+                fill(askMap, val, key);
+            });
+        } catch (error) {
+        }
+
+        try {
+            this.bids.forEach((val, key) => {
+                fill(bidMap, val, key);
+            });
+        } catch (error) {
+        }
+
+        return {asks: Array.from(askMap.entries()), bids: Array.from(bidMap.entries())};
+    }
+
 };

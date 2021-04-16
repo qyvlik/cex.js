@@ -206,5 +206,13 @@ module.exports = class ExchangeServer {
         }
         return engine.getOrder(BigInt(seq));
     }
+
+    getDepth({symbol, limit}) {
+        const engine = this.engines.get(symbol);
+        if (typeof engine === 'undefined') {
+            throw new Error(`symbol ${symbol} not exist`);
+        }
+        return engine.getDepth(limit);
+    }
 };
 
