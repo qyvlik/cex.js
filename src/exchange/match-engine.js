@@ -149,13 +149,21 @@ module.exports = class MatchEngine {
     cancelOrder(seq) {
         const orders = this.orders;
         if (orders.has(seq)) {
-            const {price, side} = this.orders.get(seq);
-            const books = side === 'BUY' ? this.bids : this.asks;
-            books.delete({price, seq});
+            const order = this.orders.get(seq);
+            const sideIsBuy = order.side === 'BUY';
+            const books = sideIsBuy ? this.bids : this.asks;
+            books.delete({price: order.price, seq: order.seq});
             orders.delete(seq);
-            return true;
+            return {
+                seq,
+                cancel: {
+                    uid: order.uid,
+                    currency: sideIsBuy ? this.quote : this.base,
+                    amount: sideIsBuy ? order.price * order.remain : order.remain
+                }
+            };
         }
-        return false;
+        return {seq};
     }
 
     getOrder(seq) {

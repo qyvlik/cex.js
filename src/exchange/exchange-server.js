@@ -52,6 +52,7 @@ module.exports = class ExchangeServer {
         const account = this.getAccount({uid, currency, time});
         account.available += amount;
         account.utime = time;
+        account.version++;
         return true;
     }
 
@@ -71,6 +72,8 @@ module.exports = class ExchangeServer {
         }
         account.available -= amount;
         account.utime = time;
+        account.version++;
+        return true;
     }
 
     placeOrder({uid, side, symbol, price, amount}) {
@@ -90,10 +93,9 @@ module.exports = class ExchangeServer {
         }
         const time = Date.now();
         // sub balance
-        const [base, quote] = symbol.split('/');
         const sideIsBuy = side === 'BUY';
         const money = sideIsBuy ? price * amount : ZERO;
-        const subCurrency = sideIsBuy ? quote : base;
+        const subCurrency = sideIsBuy ? engine.quote : engine.base;
         const account = this.getAccount({uid, currency: subCurrency, time});
         const frozen = sideIsBuy ? money : amount;
         if (account.available < frozen) {
@@ -101,6 +103,8 @@ module.exports = class ExchangeServer {
         }
         account.available -= frozen;
         account.frozen += frozen;
+        account.utime = time;
+        account.version++;
 
         const order = {
             uid,
@@ -127,18 +131,21 @@ module.exports = class ExchangeServer {
             const account = this.getAccount({uid, currency, time});
             account[type] -= amount;
             account.utime = time;
+            account.version++;
         }
         {
             const {currency, amount, type} = inbound;
             const account = this.getAccount({uid, currency, time});
             account[type] += amount;
             account.utime = time;
+            account.version++;
         }
         if (isTaker && refund.amount > ZERO) {
             const account = this.getAccount({uid, currency: refund.currency, time});
             account.available += refund.amount;
             account.frozen -= refund.amount;
             account.utime = time;
+            account.version++;
         }
     }
 
@@ -152,7 +159,8 @@ module.exports = class ExchangeServer {
                 available: ZERO,
                 frozen: ZERO,
                 time,
-                utime: time
+                utime: time,
+                version: ZERO
             };
             this.accounts.set(key, account);
         }
@@ -174,7 +182,21 @@ module.exports = class ExchangeServer {
         if (typeof engine === 'undefined') {
             throw new Error(`symbol ${symbol} not exist`);
         }
-        return engine.cancelOrder(BigInt(seq));
+        const time = Date.now();
+        this.seq++;
+        const result = engine.cancelOrder(BigInt(seq));
+        const {cancel} = result;
+        if (typeof cancel !== 'undefined') {
+            const account = this.getAccount({
+                uid: cancel.uid, currency: cancel.currency, time
+            });
+            account.frozen -= cancel.amount;
+            account.available += cancel.amount;
+            account.utime = time;
+            account.version++;
+        }
+
+        return result;
     }
 
     getOrder({symbol, seq}) {

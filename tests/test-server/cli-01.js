@@ -18,14 +18,14 @@ const Client = require('../../src/jsonrpc/client');
     await client.call('recharge', {
         uid: 10000,
         currency: 'BTC',
-        amount: '1'
+        amount: '10'
     });
 
 
     await client.call('recharge', {
         uid: 10000,
         currency: 'USDT',
-        amount: '100000'
+        amount: '620000'
     });
 
     {
@@ -37,16 +37,17 @@ const Client = require('../../src/jsonrpc/client');
         uid: 10000,
         side: 'BUY',
         price: '62000',
-        amount: '1',
+        amount: '10',
         symbol: 'BTC/USDT'
     };
+    let buyOrderId = null;
     try {
         const placeResult = await client.call('placeOrder', buyCmd);
         console.info(`placeResult=${JSON.stringify(placeResult)}`);
 
         const order = await client.call('getOrder', {symbol: 'BTC/USDT', seq: placeResult.seq});
         console.info(`getOrder=${JSON.stringify(order)}`);
-
+        buyOrderId = placeResult.seq;
     } catch (error) {
         console.error(`placeOrder failure : ${JSON.stringify(error)}`);
     }
@@ -55,7 +56,7 @@ const Client = require('../../src/jsonrpc/client');
         uid: 10000,
         side: 'SELL',
         price: '62000',
-        amount: '1',
+        amount: '9',
         symbol: 'BTC/USDT'
     };
 
@@ -72,6 +73,12 @@ const Client = require('../../src/jsonrpc/client');
         console.info(`getAccount=${JSON.stringify(accounts)}`);
     }
 
+    {
+        const cancel = await client.call('cancelOrder', {symbol: 'BTC/USDT', seq: buyOrderId});
+        console.info(`cancel = ${JSON.stringify(cancel)}`);
+        const accounts = await client.call('getAccounts', {uid: 10000});
+        console.info(`getAccount=${JSON.stringify(accounts)}`);
+    }
 
 })();
 
